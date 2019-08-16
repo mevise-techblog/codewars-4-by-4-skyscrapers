@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+func main() {
+	generateBoards(5)
+}
+
 func factorial(x int) int {
 	if x == 0 {
 		return 1
@@ -56,11 +60,16 @@ func generateRowPatterns(dimension int) [][]int {
 
 	cnt := 0
 
-	permMePlease := []int{1, 2, 3, 4}
+	var permMePlease = make([]int, dimension)
+
+	for i := 0; i < dimension; i++ {
+		permMePlease[i] = i + 1 // building height starts at 1
+	}
+
 	permCount := factorial(len(permMePlease))
 
 	permutations := make([][]int, permCount)
-	for i := 0; i < 24; i++ {
+	for i := 0; i < dimension*dimension; i++ {
 		permutations[i] = make([]int, len(permMePlease))
 	}
 
@@ -79,13 +88,11 @@ type gameboard struct {
 	hintPattern []int
 }
 
-// generateBoards will generate all valid boards of a given dimension
+// generateBoards returns an array of pointers to all the possible valid boards
 func generateBoards(dimension int) []*gameboard {
 
 	gameboards := []*gameboard{} // now we have a slice to store the boards
-
-	// TODO : find a way to generate this programatically.
-	rowPatterns := generateRowPatterns(4)
+	rowPatterns := generateRowPatterns(dimension)
 
 	// Create a board slice
 	var boardArray [][]int
@@ -158,8 +165,8 @@ func clearBoard(gb *[4][4]int) {
 }
 
 func printBoard(gb [][]int) {
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
+	for i := 0; i < len(gb); i++ {
+		for j := 0; j < len(gb); j++ {
 			fmt.Printf("%d ", gb[i][j])
 		}
 		fmt.Println()
@@ -174,10 +181,10 @@ func printBoard(gb [][]int) {
 func checkBoardArray(ba [][]int, dimension int) bool {
 
 	// check each row for duplicate values
-	for row := 0; row < dimension; row++ {
+	for row := 0; row < dimension-1; row++ {
 		for i := 0; i < (dimension - 1); i++ {
 			val1 := ba[row][i]
-			for j := i + 1; j < 4; j++ {
+			for j := i + 1; j < dimension-1; j++ {
 				val2 := ba[row][j]
 				if val1 == val2 && val1 != 0 && val2 != 0 {
 					return false
@@ -187,10 +194,10 @@ func checkBoardArray(ba [][]int, dimension int) bool {
 	}
 
 	// Check each column for any duplicate values
-	for col := 0; col < 4; col++ {
-		for i := 0; i < (4 - 1); i++ {
+	for col := 0; col < dimension-1; col++ {
+		for i := 0; i < (dimension - 1); i++ {
 			val1 := ba[i][col]
-			for j := i + 1; j < 4; j++ {
+			for j := i + 1; j < dimension-1; j++ {
 				val2 := ba[j][col]
 				if val1 == val2 && val1 != 0 && val2 != 0 {
 					return false
@@ -203,11 +210,9 @@ func checkBoardArray(ba [][]int, dimension int) bool {
 }
 
 // doesHintPatternMatchBoard
-func doesHintPatternMatchBoard(gb *[4][4]int, pattern [16]int) {
-
-	p := generateHintPattern(gb)
-
-}
+//func doesHintPatternMatchBoard(gb *[4][4]int, pattern [16]int) {
+//	p := generateHintPattern(gb)
+//}
 
 // generateHintPattern
 func generateHintPattern(gb *[4][4]int) [16]int {
