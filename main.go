@@ -12,6 +12,7 @@ func main() {
 
 // TODO : make this generate based off a board size
 func generateRowPatterns(dimension int) [][]int {
+
 	rp := make([][]int, 24)
 	for i := 0; i < 24; i++ {
 		rp[i] = make([]int, 4)
