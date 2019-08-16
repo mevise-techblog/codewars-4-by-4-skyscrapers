@@ -4,47 +4,73 @@ import (
 	"fmt"
 )
 
-func main() {
-	generateBoards(4)
+func factorial(x int) int {
+	if x == 0 {
+		return 1
+	}
+
+	return x * factorial(x-1)
 }
 
-// multidimensional slice : https://go.googlesource.com/proposal/+/refs/heads/master/design/6282-table-data.md
+//GeneratePermutations will find all permutations for an array of integers and return the data on a channel
+// one permutation at a time as they are discovered.
+func GeneratePermutations(data []int) <-chan []int {
+	c := make(chan []int)
+	go func(c chan []int) {
+		defer close(c)
+		permutate(c, data)
+	}(c)
+	return c
+}
+
+func permutate(c chan []int, inputs []int) {
+	output := make([]int, len(inputs))
+	copy(output, inputs)
+	c <- output
+
+	size := len(inputs)
+	p := make([]int, size+1)
+	for i := 0; i < size+1; i++ {
+		p[i] = i
+	}
+	for i := 1; i < size; {
+		p[i]--
+		j := 0
+		if i%2 == 1 {
+			j = p[i]
+		}
+		tmp := inputs[j]
+		inputs[j] = inputs[i]
+		inputs[i] = tmp
+		output := make([]int, len(inputs))
+		copy(output, inputs)
+		c <- output
+		for i = 1; p[i] == 0; i++ {
+			p[i] = i
+		}
+	}
+}
 
 // TODO : make this generate based off a board size
 func generateRowPatterns(dimension int) [][]int {
 
-	rp := make([][]int, 24)
+	cnt := 0
+
+	permMePlease := []int{1, 2, 3, 4}
+	permCount := factorial(len(permMePlease))
+
+	permutations := make([][]int, permCount)
 	for i := 0; i < 24; i++ {
-		rp[i] = make([]int, 4)
+		permutations[i] = make([]int, len(permMePlease))
 	}
 
-	// TODO : Is there an easier way?
-	copy(rp[0], []int{1, 2, 3, 4})
-	copy(rp[1], []int{1, 2, 4, 3})
-	copy(rp[2], []int{1, 3, 2, 4})
-	copy(rp[3], []int{1, 3, 4, 2})
-	copy(rp[4], []int{1, 4, 2, 3})
-	copy(rp[5], []int{1, 4, 3, 2})
-	copy(rp[6], []int{2, 1, 3, 4})
-	copy(rp[7], []int{2, 1, 4, 3})
-	copy(rp[8], []int{2, 3, 1, 4})
-	copy(rp[9], []int{2, 3, 4, 1})
-	copy(rp[10], []int{2, 4, 1, 3})
-	copy(rp[11], []int{2, 4, 3, 1})
-	copy(rp[12], []int{3, 1, 2, 4})
-	copy(rp[13], []int{3, 1, 4, 2})
-	copy(rp[14], []int{3, 2, 1, 4})
-	copy(rp[15], []int{3, 2, 4, 1})
-	copy(rp[16], []int{3, 4, 1, 2})
-	copy(rp[17], []int{3, 4, 2, 1})
-	copy(rp[18], []int{4, 1, 2, 3})
-	copy(rp[19], []int{4, 1, 3, 2})
-	copy(rp[20], []int{4, 2, 1, 3})
-	copy(rp[21], []int{4, 2, 3, 1})
-	copy(rp[22], []int{4, 3, 1, 2})
-	copy(rp[23], []int{4, 3, 2, 1})
+	for perm := range GeneratePermutations(permMePlease) {
+		permutations[cnt] = perm
+		//fmt.Println(perm)
+		cnt++
+	}
 
-	return rp
+	return permutations
 }
 
 type gameboard struct {
@@ -54,9 +80,9 @@ type gameboard struct {
 }
 
 // generateBoards will generate all valid boards of a given dimension
-func generateBoards(dimension int) []gameboard {
+func generateBoards(dimension int) []*gameboard {
 
-	gameboards := []gameboard{} // now we have a slice to store the boards
+	gameboards := []*gameboard{} // now we have a slice to store the boards
 
 	// TODO : find a way to generate this programatically.
 	rowPatterns := generateRowPatterns(4)
@@ -79,7 +105,7 @@ func generateBoards(dimension int) []gameboard {
 		for r1 := 0; r1 < len(rowPatterns); r1++ {
 			boardArray[1] = rowPatterns[r1]
 
-			if checkBoardArray(&boardArray, dimension) == false {
+			if checkBoardArray(boardArray, dimension) == false {
 				skippedIterations++
 				boardArray[1] = []int{0, 0, 0, 0}
 				continue
@@ -88,7 +114,7 @@ func generateBoards(dimension int) []gameboard {
 			for r2 := 0; r2 < len(rowPatterns); r2++ {
 				boardArray[2] = rowPatterns[r2]
 
-				if checkBoardArray(&boardArray, dimension) == false {
+				if checkBoardArray(boardArray, dimension) == false {
 					skippedIterations++
 					boardArray[2] = []int{0, 0, 0, 0}
 					continue
@@ -97,7 +123,7 @@ func generateBoards(dimension int) []gameboard {
 				for r3 := 0; r3 < len(rowPatterns); r3++ {
 					boardArray[3] = rowPatterns[r3]
 
-					if checkBoardArray(&boardArray, dimension) == false {
+					if checkBoardArray(boardArray, dimension) == false {
 						skippedIterations++
 						boardArray[3] = []int{0, 0, 0, 0}
 						continue
@@ -105,13 +131,13 @@ func generateBoards(dimension int) []gameboard {
 
 					fmt.Printf("Complete Game Board!!! r1=%v r2=%v r3=%v\n", r1, r2, r3)
 					gameboardCount++
-					printBoard(&gameboard)
+					printBoard(boardArray)
 
-					gbs := gameboardstruct{dimension: 4, board: gameboard}
-					gameboards := append(gameboards, gbs)
+					gbs := gameboard{dimension: dimension, boardarray: boardArray}
+					gameboards := append(gameboards, &gbs)
 
-					generateHintPattern(&gameboard)
-					fmt.Println()
+					//generateHintPattern(gameboard)
+					fmt.Println(gameboards)
 				}
 			}
 		}
@@ -131,7 +157,7 @@ func clearBoard(gb *[4][4]int) {
 	}
 }
 
-func printBoard(gb *[4][4]int) {
+func printBoard(gb [][]int) {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			fmt.Printf("%d ", gb[i][j])
@@ -145,14 +171,14 @@ func printBoard(gb *[4][4]int) {
 // a bad board, that way we can short circuit the process and move to the next
 // board
 
-func checkBoardArray(gameboard *[][]int, dimension int) bool {
+func checkBoardArray(ba [][]int, dimension int) bool {
 
 	// check each row for duplicate values
 	for row := 0; row < dimension; row++ {
 		for i := 0; i < (dimension - 1); i++ {
-			val1 := gameboard[row][i]
+			val1 := ba[row][i]
 			for j := i + 1; j < 4; j++ {
-				val2 := gb[row][j]
+				val2 := ba[row][j]
 				if val1 == val2 && val1 != 0 && val2 != 0 {
 					return false
 				}
@@ -163,9 +189,9 @@ func checkBoardArray(gameboard *[][]int, dimension int) bool {
 	// Check each column for any duplicate values
 	for col := 0; col < 4; col++ {
 		for i := 0; i < (4 - 1); i++ {
-			val1 := gb[i][col]
+			val1 := ba[i][col]
 			for j := i + 1; j < 4; j++ {
-				val2 := gb[j][col]
+				val2 := ba[j][col]
 				if val1 == val2 && val1 != 0 && val2 != 0 {
 					return false
 				}
